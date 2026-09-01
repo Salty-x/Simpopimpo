@@ -1,0 +1,457 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Rebirth & Jump Calculator</title>
+  <style>
+    :root {
+      --bg: #0d1117;
+      --card: #161b22;
+      --border: #30363d;
+      --text: #c9d1d9;
+      --accent: #58a6ff;
+      --accent-hover: #1f6feb;
+      --danger: #da3633;
+      --danger-bg: rgba(218, 54, 51, 0.15);
+      --highlight: #f0883e;
+    }
+
+    * {
+      box-sizing: border-box;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    }
+
+    body {
+      background-color: var(--bg);
+      color: var(--text);
+      margin: 0;
+      padding: 16px;
+      display: flex;
+      justify-content: center;
+    }
+
+    .container {
+      width: 100%;
+      max-width: 520px;
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 20px;
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5);
+    }
+
+    h1 {
+      font-size: 1.4rem;
+      text-align: center;
+      margin-top: 0;
+      color: #fff;
+    }
+
+    .field-group {
+      margin-bottom: 14px;
+    }
+
+    label {
+      display: block;
+      font-size: 0.85rem;
+      font-weight: 600;
+      margin-bottom: 6px;
+      color: #8b949e;
+    }
+
+    input, select {
+      width: 100%;
+      padding: 10px 12px;
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      color: #fff;
+      font-size: 0.95rem;
+      outline: none;
+    }
+
+    input:focus, select:focus {
+      border-color: var(--accent);
+    }
+
+    .grid-2 {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+    }
+
+    button {
+      width: 100%;
+      padding: 12px;
+      background: var(--accent);
+      color: #fff;
+      border: none;
+      border-radius: 6px;
+      font-size: 1rem;
+      font-weight: bold;
+      cursor: pointer;
+      margin-top: 8px;
+    }
+
+    button:hover {
+      background: var(--accent-hover);
+    }
+
+    #error-box {
+      display: none;
+      background: var(--danger-bg);
+      border: 1px solid var(--danger);
+      color: #ff7b72;
+      padding: 12px;
+      border-radius: 6px;
+      font-size: 0.9rem;
+      margin-top: 16px;
+    }
+
+    #results-box {
+      display: none;
+      background: #21262d;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 16px;
+      margin-top: 16px;
+    }
+
+    .result-row {
+      display: flex;
+      justify-content: space-between;
+      padding: 8px 0;
+      border-bottom: 1px solid var(--border);
+      font-size: 0.9rem;
+    }
+
+    .result-row:last-child {
+      border-bottom: none;
+    }
+
+    .result-value {
+      font-weight: bold;
+      color: #fff;
+    }
+
+    .highlight {
+      color: var(--highlight);
+    }
+
+    .success {
+      color: #3fb950;
+    }
+  </style>
+</head>
+<body>
+
+<div class="container">
+  <h1>Rebirth & Jump Calculator</h1>
+
+  <div class="field-group">
+    <label>Goal Mode</label>
+    <select id="mode" onchange="toggleInputs()">
+      <option value="1">1. Reach Target Jumps (No Rebirths)</option>
+      <option value="2">2. Rebirth Grind (Start Jumps -> Target Rebirth)</option>
+      <option value="3">3. Rebirth Grind + Extra End Jumps</option>
+      <option value="4">4. Time for a Specific Sp Amount</option>
+    </select>
+  </div>
+
+  <div class="grid-2">
+    <div class="field-group">
+      <label>Income / sec (Sp)</label>
+      <input type="number" id="income" step="any" placeholder="e.g. 0.00901" oninput="saveData()" />
+    </div>
+    <div class="field-group">
+      <label>Current Multiplier (x)</label>
+      <input type="number" id="multiplier" step="any" placeholder="e.g. 21.0" oninput="saveData()" />
+    </div>
+  </div>
+
+  <div class="grid-2" id="current-stats-row">
+    <div class="field-group">
+      <label>Current Rebirth</label>
+      <input type="number" id="cur-rebirth" placeholder="0 - 75" oninput="saveData()" />
+    </div>
+    <div class="field-group">
+      <label>Current Jumps</label>
+      <input type="number" id="cur-jumps" placeholder="0 - 750" oninput="saveData()" />
+    </div>
+  </div>
+
+  <div class="grid-2">
+    <div class="field-group" id="group-target-rebirth">
+      <label>Target Rebirth</label>
+      <input type="number" id="target-rebirth" placeholder="1 - 75" oninput="saveData()" />
+    </div>
+    <div class="field-group" id="group-target-jumps">
+      <label id="target-jumps-label">Target Jumps</label>
+      <input type="number" id="target-jumps" placeholder="10 - 750" oninput="saveData()" />
+    </div>
+  </div>
+
+  <div class="field-group" id="group-target-sp" style="display: none;">
+    <label>Target Amount (Sp)</label>
+    <input type="number" id="target-sp" step="any" placeholder="e.g. 500" oninput="saveData()" />
+  </div>
+
+  <button onclick="calculate()">Calculate</button>
+
+  <div id="error-box"></div>
+
+  <div id="results-box">
+    <div class="result-row" id="row-cost">
+      <span>Total Cost / Target:</span>
+      <span class="result-value highlight" id="res-cost">-</span>
+    </div>
+    <div class="result-row" id="row-mult">
+      <span>Multiplier Progression:</span>
+      <span class="result-value" id="res-mult">-</span>
+    </div>
+    <div class="result-row">
+      <span>Hourly Income:</span>
+      <span class="result-value" id="res-final-rate">-</span>
+    </div>
+    <div class="result-row">
+      <span>Total Required AFK Time:</span>
+      <span class="result-value success" id="res-time">-</span>
+    </div>
+  </div>
+</div>
+
+<script>
+  const jumpTiers = [
+    { start: 320, end: 330, cost: 1.32 },
+    { start: 330, end: 340, cost: 2.12 },
+    { start: 340, end: 350, cost: 3.33 },
+    { start: 350, end: 360, cost: 5.12 },
+    { start: 360, end: 370, cost: 7.61 },
+    { start: 370, end: 380, cost: 10.80 },
+    { start: 380, end: 390, cost: 14.60 },
+    { start: 390, end: 400, cost: 18.60 },
+    { start: 400, end: 410, cost: 22.70 },
+    { start: 410, end: 420, cost: 27.70 },
+    { start: 420, end: 430, cost: 33.70 },
+    { start: 430, end: 440, cost: 41.10 },
+    { start: 440, end: 450, cost: 50.10 },
+    { start: 450, end: 460, cost: 60.50 },
+    { start: 460, end: 470, cost: 73.00 },
+    { start: 470, end: 480, cost: 87.30 },
+    { start: 480, end: 490, cost: 103.00 },
+    { start: 490, end: 500, cost: 122.00 },
+    { start: 500, end: 510, cost: 143.00 },
+    { start: 510, end: 520, cost: 165.00 },
+    { start: 520, end: 530, cost: 189.00 },
+    { start: 530, end: 540, cost: 214.00 },
+    { start: 540, end: 550, cost: 239.00 },
+    { start: 550, end: 560, cost: 277.0 },
+    { start: 560, end: 570, cost: 338.0 },
+    { start: 570, end: 580, cost: 412.0 },
+    { start: 580, end: 590, cost: 503.0 },
+    { start: 590, end: 600, cost: 612.0 },
+    { start: 600, end: 610, cost: 745.0 },
+    { start: 610, end: 620, cost: 905.0 },
+    { start: 620, end: 630, cost: 1090.0 },
+    { start: 630, end: 640, cost: 1320.0 },
+    { start: 640, end: 650, cost: 1600.0 },
+    { start: 650, end: 660, cost: 1930.0 },
+    { start: 660, end: 670, cost: 2320.0 },
+    { start: 670, end: 680, cost: 2790.0 },
+    { start: 680, end: 690, cost: 3330.0 },
+    { start: 690, end: 700, cost: 3970.0 },
+    { start: 700, end: 710, cost: 4710.0 },
+    { start: 710, end: 720, cost: 5560.0 },
+    { start: 720, end: 730, cost: 6540.0 },
+    { start: 730, end: 740, cost: 7650.0 },
+    { start: 740, end: 750, cost: 8910.0 }
+  ];
+
+  function toggleInputs() {
+    const mode = document.getElementById('mode').value;
+    const groupRebirth = document.getElementById('group-target-rebirth');
+    const groupJumps = document.getElementById('group-target-jumps');
+    const groupSp = document.getElementById('group-target-sp');
+    const curStatsRow = document.getElementById('current-stats-row');
+    const targetJumpsLabel = document.getElementById('target-jumps-label');
+
+    if (mode === '1') {
+      curStatsRow.style.display = 'grid';
+      groupRebirth.style.display = 'none';
+      groupJumps.style.display = 'block';
+      groupSp.style.display = 'none';
+      targetJumpsLabel.innerText = "Target Jumps";
+    } else if (mode === '2') {
+      curStatsRow.style.display = 'grid';
+      groupRebirth.style.display = 'block';
+      groupJumps.style.display = 'none';
+      groupSp.style.display = 'none';
+    } else if (mode === '3') {
+      curStatsRow.style.display = 'grid';
+      groupRebirth.style.display = 'block';
+      groupJumps.style.display = 'block';
+      groupSp.style.display = 'none';
+      targetJumpsLabel.innerText = "Final Jump Goal After Rebirths";
+    } else if (mode === '4') {
+      curStatsRow.style.display = 'none';
+      groupRebirth.style.display = 'none';
+      groupJumps.style.display = 'none';
+      groupSp.style.display = 'block';
+    }
+    saveData();
+  }
+
+  function getJumpCost(fromJumps, toJumps) {
+    if (toJumps <= fromJumps) return 0;
+    let cost = 0;
+    if (fromJumps < 320 && toJumps >= 320) cost += 1.5;
+
+    for (let tier of jumpTiers) {
+      if (fromJumps <= tier.start && toJumps >= tier.end) {
+        cost += tier.cost;
+      }
+    }
+    return cost;
+  }
+
+  function showError(msg) {
+    const err = document.getElementById('error-box');
+    err.innerText = msg;
+    err.style.display = 'block';
+    document.getElementById('results-box').style.display = 'none';
+  }
+
+  function formatCost(sp) {
+    return sp.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + ' Sp';
+  }
+
+  // Rounded cleanly to nearest minute (no seconds)
+  function formatTime(hoursDecimal) {
+    const totalMinutes = Math.round(hoursDecimal * 60);
+    const days = Math.floor(totalMinutes / 1440);
+    const remainingMinutesAfterDays = totalMinutes % 1440;
+    const hours = Math.floor(remainingMinutesAfterDays / 60);
+    const mins = remainingMinutesAfterDays % 60;
+
+    let parts = [];
+    if (days > 0) parts.push(days + 'd');
+    if (hours > 0 || days > 0) parts.push(hours + 'h');
+    parts.push(mins + 'm');
+    return parts.join(' ');
+  }
+
+  function calculate() {
+    const errorBox = document.getElementById('error-box');
+    const resultsBox = document.getElementById('results-box');
+    errorBox.style.display = 'none';
+
+    const mode = document.getElementById('mode').value;
+    const income = parseFloat(document.getElementById('income').value);
+    const mult = parseFloat(document.getElementById('multiplier').value);
+    const curR = parseInt(document.getElementById('cur-rebirth').value);
+    const curJ = parseInt(document.getElementById('cur-jumps').value);
+    const targetR = parseInt(document.getElementById('target-rebirth').value);
+    const targetJ = parseInt(document.getElementById('target-jumps').value);
+    const targetSp = parseFloat(document.getElementById('target-sp').value);
+
+    if (isNaN(income) || income <= 0) return showError('Invalid Option: Income per second must be greater than 0.');
+    if (isNaN(mult) || mult <= 0) return showError('Invalid Option: Current multiplier must be greater than 0.');
+
+    const baseIncome = income / mult;
+    let totalHours = 0;
+    let totalCost = 0;
+    let activeMult = mult;
+
+    if (mode === '1') {
+      if (isNaN(curJ) || curJ < 0 || curJ > 750) return showError('Invalid Option: Current jumps must be between 0 and 750.');
+      if (isNaN(targetJ) || targetJ <= curJ || targetJ > 750) return showError('Invalid Option: Target jumps must be higher than current jumps and <= 750.');
+
+      totalCost = getJumpCost(curJ, targetJ);
+      const hourlyRate = (baseIncome * activeMult) * 3600;
+      totalHours = totalCost / hourlyRate;
+
+      document.getElementById('row-mult').style.display = 'none';
+      document.getElementById('res-final-rate').innerText = formatCost(hourlyRate) + ' / hr';
+
+    } else if (mode === '2' || mode === '3') {
+      if (isNaN(curR) || curR < 0 || curR > 75) return showError('Invalid Option: Current rebirth must be between 0 and 75.');
+      if (isNaN(curJ) || curJ < 0 || curJ > 750) return showError('Invalid Option: Current jumps must be between 0 and 750.');
+      if (isNaN(targetR) || targetR <= curR || targetR > 75) return showError('Invalid Option: Target rebirth must be greater than current rebirth and <= 75.');
+
+      for (let r = curR + 1; r <= targetR; r++) {
+        const neededJumps = r * 10;
+        const startJumps = (r === curR + 1) ? curJ : 0;
+        const stepCost = getJumpCost(startJumps, neededJumps);
+
+        const hourlyRate = (baseIncome * activeMult) * 3600;
+        totalHours += (stepCost / hourlyRate);
+        totalCost += stepCost;
+        activeMult += 0.5;
+      }
+
+      if (mode === '3') {
+        if (isNaN(targetJ) || targetJ < 0 || targetJ > 750) return showError('Invalid Option: Final jump goal must be between 0 and 750.');
+        if (targetJ > 0) {
+          const finalJumpCost = getJumpCost(0, targetJ);
+          const finalHourlyRate = (baseIncome * activeMult) * 3600;
+          totalHours += (finalJumpCost / finalHourlyRate);
+          totalCost += finalJumpCost;
+        }
+      }
+
+      document.getElementById('row-mult').style.display = 'flex';
+      document.getElementById('res-mult').innerText = mult.toFixed(1) + 'x → ' + activeMult.toFixed(1) + 'x';
+      document.getElementById('res-final-rate').innerText = formatCost((baseIncome * activeMult) * 3600) + ' / hr';
+
+    } else if (mode === '4') {
+      if (isNaN(targetSp) || targetSp <= 0) return showError('Invalid Option: Target Sp must be greater than 0.');
+      totalCost = targetSp;
+      const hourlyRate = income * 3600;
+      totalHours = totalCost / hourlyRate;
+
+      document.getElementById('row-mult').style.display = 'none';
+      document.getElementById('res-final-rate').innerText = formatCost(hourlyRate) + ' / hr';
+    }
+
+    document.getElementById('res-cost').innerText = formatCost(totalCost);
+    document.getElementById('res-time').innerText = formatTime(totalHours);
+    resultsBox.style.display = 'block';
+  }
+
+  function saveData() {
+    const data = {
+      mode: document.getElementById('mode').value,
+      income: document.getElementById('income').value,
+      multiplier: document.getElementById('multiplier').value,
+      curRebirth: document.getElementById('cur-rebirth').value,
+      curJumps: document.getElementById('cur-jumps').value,
+      targetRebirth: document.getElementById('target-rebirth').value,
+      targetJumps: document.getElementById('target-jumps').value,
+      targetSp: document.getElementById('target-sp').value
+    };
+    localStorage.setItem('calc_data', JSON.stringify(data));
+  }
+
+  function loadData() {
+    const saved = localStorage.getItem('calc_data');
+    if (saved) {
+      const data = JSON.parse(saved);
+      if (data.mode) document.getElementById('mode').value = data.mode;
+      if (data.income) document.getElementById('income').value = data.income;
+      if (data.multiplier) document.getElementById('multiplier').value = data.multiplier;
+      if (data.curRebirth) document.getElementById('cur-rebirth').value = data.curRebirth;
+      if (data.curJumps) document.getElementById('cur-jumps').value = data.curJumps;
+      if (data.targetRebirth) document.getElementById('target-rebirth').value = data.targetRebirth;
+      if (data.targetJumps) document.getElementById('target-jumps').value = data.targetJumps;
+      if (data.targetSp) document.getElementById('target-sp').value = data.targetSp;
+    }
+    toggleInputs();
+  }
+
+  window.onload = loadData;
+</script>
+
+</body>
+  </html>
+  
