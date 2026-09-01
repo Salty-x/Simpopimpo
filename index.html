@@ -159,12 +159,12 @@
     </select>
   </div>
 
-  <div class="grid-2">
-    <div class="field-group">
+  <div class="grid-2" id="income-row">
+    <div class="field-group" id="group-income">
       <label>Income / sec (Sp)</label>
       <input type="number" id="income" step="any" placeholder="e.g. 0.00901" oninput="saveData()" />
     </div>
-    <div class="field-group">
+    <div class="field-group" id="group-multiplier">
       <label>Current Multiplier (x)</label>
       <input type="number" id="multiplier" step="any" placeholder="e.g. 21.0" oninput="saveData()" />
     </div>
@@ -181,7 +181,7 @@
     </div>
   </div>
 
-  <div class="grid-2">
+  <div class="grid-2" id="target-stats-row">
     <div class="field-group" id="group-target-rebirth">
       <label>Target Rebirth</label>
       <input type="number" id="target-rebirth" placeholder="1 - 75" oninput="saveData()" />
@@ -270,33 +270,46 @@
 
   function toggleInputs() {
     const mode = document.getElementById('mode').value;
+    const groupMultiplier = document.getElementById('group-multiplier');
+    const incomeRow = document.getElementById('income-row');
     const groupRebirth = document.getElementById('group-target-rebirth');
     const groupJumps = document.getElementById('group-target-jumps');
     const groupSp = document.getElementById('group-target-sp');
     const curStatsRow = document.getElementById('current-stats-row');
+    const targetStatsRow = document.getElementById('target-stats-row');
     const targetJumpsLabel = document.getElementById('target-jumps-label');
 
     if (mode === '1') {
+      incomeRow.className = 'grid-2';
+      groupMultiplier.style.display = 'block';
       curStatsRow.style.display = 'grid';
+      targetStatsRow.style.display = 'grid';
       groupRebirth.style.display = 'none';
       groupJumps.style.display = 'block';
       groupSp.style.display = 'none';
       targetJumpsLabel.innerText = "Target Jumps";
     } else if (mode === '2') {
+      incomeRow.className = 'grid-2';
+      groupMultiplier.style.display = 'block';
       curStatsRow.style.display = 'grid';
+      targetStatsRow.style.display = 'grid';
       groupRebirth.style.display = 'block';
       groupJumps.style.display = 'none';
       groupSp.style.display = 'none';
     } else if (mode === '3') {
+      incomeRow.className = 'grid-2';
+      groupMultiplier.style.display = 'block';
       curStatsRow.style.display = 'grid';
+      targetStatsRow.style.display = 'grid';
       groupRebirth.style.display = 'block';
       groupJumps.style.display = 'block';
       groupSp.style.display = 'none';
       targetJumpsLabel.innerText = "Final Jump Goal After Rebirths";
     } else if (mode === '4') {
+      incomeRow.className = '';
+      groupMultiplier.style.display = 'none';
       curStatsRow.style.display = 'none';
-      groupRebirth.style.display = 'none';
-      groupJumps.style.display = 'none';
+      targetStatsRow.style.display = 'none';
       groupSp.style.display = 'block';
     }
     saveData();
@@ -326,7 +339,6 @@
     return sp.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + ' Sp';
   }
 
-  // Rounded cleanly to nearest minute (no seconds)
   function formatTime(hoursDecimal) {
     const totalMinutes = Math.round(hoursDecimal * 60);
     const days = Math.floor(totalMinutes / 1440);
@@ -356,55 +368,11 @@
     const targetSp = parseFloat(document.getElementById('target-sp').value);
 
     if (isNaN(income) || income <= 0) return showError('Invalid Option: Income per second must be greater than 0.');
-    if (isNaN(mult) || mult <= 0) return showError('Invalid Option: Current multiplier must be greater than 0.');
 
-    const baseIncome = income / mult;
     let totalHours = 0;
     let totalCost = 0;
-    let activeMult = mult;
 
-    if (mode === '1') {
-      if (isNaN(curJ) || curJ < 0 || curJ > 750) return showError('Invalid Option: Current jumps must be between 0 and 750.');
-      if (isNaN(targetJ) || targetJ <= curJ || targetJ > 750) return showError('Invalid Option: Target jumps must be higher than current jumps and <= 750.');
-
-      totalCost = getJumpCost(curJ, targetJ);
-      const hourlyRate = (baseIncome * activeMult) * 3600;
-      totalHours = totalCost / hourlyRate;
-
-      document.getElementById('row-mult').style.display = 'none';
-      document.getElementById('res-final-rate').innerText = formatCost(hourlyRate) + ' / hr';
-
-    } else if (mode === '2' || mode === '3') {
-      if (isNaN(curR) || curR < 0 || curR > 75) return showError('Invalid Option: Current rebirth must be between 0 and 75.');
-      if (isNaN(curJ) || curJ < 0 || curJ > 750) return showError('Invalid Option: Current jumps must be between 0 and 750.');
-      if (isNaN(targetR) || targetR <= curR || targetR > 75) return showError('Invalid Option: Target rebirth must be greater than current rebirth and <= 75.');
-
-      for (let r = curR + 1; r <= targetR; r++) {
-        const neededJumps = r * 10;
-        const startJumps = (r === curR + 1) ? curJ : 0;
-        const stepCost = getJumpCost(startJumps, neededJumps);
-
-        const hourlyRate = (baseIncome * activeMult) * 3600;
-        totalHours += (stepCost / hourlyRate);
-        totalCost += stepCost;
-        activeMult += 0.5;
-      }
-
-      if (mode === '3') {
-        if (isNaN(targetJ) || targetJ < 0 || targetJ > 750) return showError('Invalid Option: Final jump goal must be between 0 and 750.');
-        if (targetJ > 0) {
-          const finalJumpCost = getJumpCost(0, targetJ);
-          const finalHourlyRate = (baseIncome * activeMult) * 3600;
-          totalHours += (finalJumpCost / finalHourlyRate);
-          totalCost += finalJumpCost;
-        }
-      }
-
-      document.getElementById('row-mult').style.display = 'flex';
-      document.getElementById('res-mult').innerText = mult.toFixed(1) + 'x → ' + activeMult.toFixed(1) + 'x';
-      document.getElementById('res-final-rate').innerText = formatCost((baseIncome * activeMult) * 3600) + ' / hr';
-
-    } else if (mode === '4') {
+    if (mode === '4') {
       if (isNaN(targetSp) || targetSp <= 0) return showError('Invalid Option: Target Sp must be greater than 0.');
       totalCost = targetSp;
       const hourlyRate = income * 3600;
@@ -412,6 +380,54 @@
 
       document.getElementById('row-mult').style.display = 'none';
       document.getElementById('res-final-rate').innerText = formatCost(hourlyRate) + ' / hr';
+
+    } else {
+      if (isNaN(mult) || mult <= 0) return showError('Invalid Option: Current multiplier must be greater than 0.');
+
+      const baseIncome = income / mult;
+      let activeMult = mult;
+
+      if (mode === '1') {
+        if (isNaN(curJ) || curJ < 0 || curJ > 750) return showError('Invalid Option: Current jumps must be between 0 and 750.');
+        if (isNaN(targetJ) || targetJ <= curJ || targetJ > 750) return showError('Invalid Option: Target jumps must be higher than current jumps and <= 750.');
+
+        totalCost = getJumpCost(curJ, targetJ);
+        const hourlyRate = (baseIncome * activeMult) * 3600;
+        totalHours = totalCost / hourlyRate;
+
+        document.getElementById('row-mult').style.display = 'none';
+        document.getElementById('res-final-rate').innerText = formatCost(hourlyRate) + ' / hr';
+
+      } else if (mode === '2' || mode === '3') {
+        if (isNaN(curR) || curR < 0 || curR > 75) return showError('Invalid Option: Current rebirth must be between 0 and 75.');
+        if (isNaN(curJ) || curJ < 0 || curJ > 750) return showError('Invalid Option: Current jumps must be between 0 and 750.');
+        if (isNaN(targetR) || targetR <= curR || targetR > 75) return showError('Invalid Option: Target rebirth must be greater than current rebirth and <= 75.');
+
+        for (let r = curR + 1; r <= targetR; r++) {
+          const neededJumps = r * 10;
+          const startJumps = (r === curR + 1) ? curJ : 0;
+          const stepCost = getJumpCost(startJumps, neededJumps);
+
+          const hourlyRate = (baseIncome * activeMult) * 3600;
+          totalHours += (stepCost / hourlyRate);
+          totalCost += stepCost;
+          activeMult += 0.5;
+        }
+
+        if (mode === '3') {
+          if (isNaN(targetJ) || targetJ < 0 || targetJ > 750) return showError('Invalid Option: Final jump goal must be between 0 and 750.');
+          if (targetJ > 0) {
+            const finalJumpCost = getJumpCost(0, targetJ);
+            const finalHourlyRate = (baseIncome * activeMult) * 3600;
+            totalHours += (finalJumpCost / finalHourlyRate);
+            totalCost += finalJumpCost;
+          }
+        }
+
+        document.getElementById('row-mult').style.display = 'flex';
+        document.getElementById('res-mult').innerText = mult.toFixed(1) + 'x → ' + activeMult.toFixed(1) + 'x';
+        document.getElementById('res-final-rate').innerText = formatCost((baseIncome * activeMult) * 3600) + ' / hr';
+      }
     }
 
     document.getElementById('res-cost').innerText = formatCost(totalCost);
@@ -453,5 +469,4 @@
 </script>
 
 </body>
-  </html>
-  
+</html>
