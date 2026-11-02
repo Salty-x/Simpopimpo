@@ -1,472 +1,286 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Rebirth & Jump Calculator</title>
-  <style>
-    :root {
-      --bg: #0d1117;
-      --card: #161b22;
-      --border: #30363d;
-      --text: #c9d1d9;
-      --accent: #58a6ff;
-      --accent-hover: #1f6feb;
-      --danger: #da3633;
-      --danger-bg: rgba(218, 54, 51, 0.15);
-      --highlight: #f0883e;
-    }
-
-    * {
-      box-sizing: border-box;
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-    }
-
-    body {
-      background-color: var(--bg);
-      color: var(--text);
-      margin: 0;
-      padding: 16px;
-      display: flex;
-      justify-content: center;
-    }
-
-    .container {
-      width: 100%;
-      max-width: 520px;
-      background: var(--card);
-      border: 1px solid var(--border);
-      border-radius: 12px;
-      padding: 20px;
-      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5);
-    }
-
-    h1 {
-      font-size: 1.4rem;
-      text-align: center;
-      margin-top: 0;
-      color: #fff;
-    }
-
-    .field-group {
-      margin-bottom: 14px;
-    }
-
-    label {
-      display: block;
-      font-size: 0.85rem;
-      font-weight: 600;
-      margin-bottom: 6px;
-      color: #8b949e;
-    }
-
-    input, select {
-      width: 100%;
-      padding: 10px 12px;
-      background: var(--bg);
-      border: 1px solid var(--border);
-      border-radius: 6px;
-      color: #fff;
-      font-size: 0.95rem;
-      outline: none;
-    }
-
-    input:focus, select:focus {
-      border-color: var(--accent);
-    }
-
-    .grid-2 {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 10px;
-    }
-
-    button {
-      width: 100%;
-      padding: 12px;
-      background: var(--accent);
-      color: #fff;
-      border: none;
-      border-radius: 6px;
-      font-size: 1rem;
-      font-weight: bold;
-      cursor: pointer;
-      margin-top: 8px;
-    }
-
-    button:hover {
-      background: var(--accent-hover);
-    }
-
-    #error-box {
-      display: none;
-      background: var(--danger-bg);
-      border: 1px solid var(--danger);
-      color: #ff7b72;
-      padding: 12px;
-      border-radius: 6px;
-      font-size: 0.9rem;
-      margin-top: 16px;
-    }
-
-    #results-box {
-      display: none;
-      background: #21262d;
-      border: 1px solid var(--border);
-      border-radius: 8px;
-      padding: 16px;
-      margin-top: 16px;
-    }
-
-    .result-row {
-      display: flex;
-      justify-content: space-between;
-      padding: 8px 0;
-      border-bottom: 1px solid var(--border);
-      font-size: 0.9rem;
-    }
-
-    .result-row:last-child {
-      border-bottom: none;
-    }
-
-    .result-value {
-      font-weight: bold;
-      color: #fff;
-    }
-
-    .highlight {
-      color: var(--highlight);
-    }
-
-    .success {
-      color: #3fb950;
-    }
-  </style>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<title>Rebirth &amp; Jump Calculator</title>
+<style>
+:root{
+  --bg:#f3f1ec; --card:#fffdf8; --inset:#f0ede5; --border:#ddd8cb; --text:#23211c; --muted:#6f6a5d;
+  --accent:#b8791a; --accent-ink:#fff; --oc:#b8791a; --time:#0f7a6b; --danger:#b3261e; --danger-bg:#fbe9e7;
+  box-sizing:border-box; padding-top:env(safe-area-inset-top,0px); padding-bottom:env(safe-area-inset-bottom,0px);
+  color-scheme:light;
+}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){
+    --bg:#14161a; --card:#1c1f25; --inset:#14161a; --border:#2f333b; --text:#e9e6dd; --muted:#9a968a;
+    --accent:#e8b04a; --accent-ink:#1a1405; --oc:#e8b04a; --time:#4fd1b8; --danger:#ff8a80; --danger-bg:#3a1f1d;
+    color-scheme:dark;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#14161a; --card:#1c1f25; --inset:#14161a; --border:#2f333b; --text:#e9e6dd; --muted:#9a968a;
+  --accent:#e8b04a; --accent-ink:#1a1405; --oc:#e8b04a; --time:#4fd1b8; --danger:#ff8a80; --danger-bg:#3a1f1d;
+  color-scheme:dark;
+}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--text);font:16px/1.45 "Avenir Next","Segoe UI",system-ui,-apple-system,Roboto,sans-serif;padding:20px 14px 40px;display:flex;justify-content:center}
+.wrap{width:100%;max-width:540px}
+header{margin:6px 2px 18px}
+h1{font:700 1.6rem/1.15 Georgia,"Iowan Old Style","Times New Roman",serif;margin:0 0 4px;letter-spacing:-.01em}
+header p{margin:0;color:var(--muted);font-size:.9rem}
+.panel{background:var(--card);border:1px solid var(--border);border-radius:16px;padding:18px;margin-bottom:14px}
+.panel h2{font-size:.95rem;font-weight:700;margin:0 0 12px}
+.f{margin-bottom:12px}
+.f:last-child{margin-bottom:0}
+label{display:block;font-size:.82rem;font-weight:600;color:var(--muted);margin-bottom:5px}
+input,select{width:100%;padding:11px 12px;background:var(--inset);border:1px solid var(--border);border-radius:10px;color:var(--text);font:inherit;font-size:1rem;outline:none;transition:border-color .15s,box-shadow .15s}
+input:focus-visible,select:focus-visible,button:focus-visible{border-color:var(--accent);box-shadow:0 0 0 3px color-mix(in srgb,var(--accent) 30%,transparent)}
+.g2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.row{display:flex;gap:8px}
+.row select{width:92px;flex:none}
+.hint{font-size:.76rem;color:var(--muted);margin-top:4px}
+button.go{width:100%;padding:14px;background:var(--accent);color:var(--accent-ink);border:0;border-radius:12px;font:inherit;font-weight:700;font-size:1.02rem;cursor:pointer;transition:transform .1s,filter .15s}
+button.go:hover{filter:brightness(1.07)}
+button.go:active{transform:scale(.985)}
+#err{display:none;background:var(--danger-bg);border:1px solid var(--danger);color:var(--danger);padding:12px;border-radius:10px;font-size:.9rem;margin-bottom:14px}
+#out{display:none}
+.hero{text-align:center;padding:22px 16px}
+.hero .big{font:700 2.3rem/1.1 Georgia,"Times New Roman",serif;color:var(--time);margin:4px 0 6px;letter-spacing:-.01em}
+.hero .sub{color:var(--muted);font-size:.88rem}
+.stats{display:grid;gap:0}
+.s{display:flex;justify-content:space-between;gap:12px;padding:10px 0;border-bottom:1px solid var(--border);font-size:.93rem}
+.s:last-child{border-bottom:0;padding-bottom:0}
+.s:first-child{padding-top:0}
+.s span:first-child{color:var(--muted)}
+.s b{text-align:right}
+.oc{color:var(--oc)}
+.tm{color:var(--time)}
+.foot{font-size:.76rem;color:var(--muted);text-align:center;margin-top:4px}
+@media (max-width:380px){.g2{grid-template-columns:1fr}}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
 </head>
 <body>
+<div class="wrap">
+  <header>
+    <h1>Rebirth &amp; jump calculator</h1>
+    <p>1000 Sx = 1 Sp, 1000 Sp = 1 Oc. Jumps move in steps of 10.</p>
+  </header>
 
-<div class="container">
-  <h1>Rebirth & Jump Calculator</h1>
-
-  <div class="field-group">
-    <label>Goal Mode</label>
-    <select id="mode" onchange="toggleInputs()">
-      <option value="1">1. Reach Target Jumps (No Rebirths)</option>
-      <option value="2">2. Rebirth Grind (Start Jumps -> Target Rebirth)</option>
-      <option value="3">3. Rebirth Grind + Extra End Jumps</option>
-      <option value="4">4. Time for a Specific Sp Amount</option>
-    </select>
+  <div class="panel">
+    <div class="f">
+      <label for="mode">What do you want to work out?</label>
+      <select id="mode">
+        <option value="1">Reach target jumps (no rebirths)</option>
+        <option value="2">Rebirth grind (current jumps → target rebirth)</option>
+        <option value="3">Rebirth grind + extra jumps at the end</option>
+        <option value="4">Time to earn a specific amount</option>
+      </select>
+    </div>
+    <div class="g2" id="incomeRow">
+      <div class="f">
+        <label for="income">Income per second (Sx)</label>
+        <input type="number" id="income" step="any" min="0" inputmode="decimal" placeholder="e.g. 9.01" />
+      </div>
+      <div class="f" id="gMult">
+        <label for="multiplier">Current multiplier (x)</label>
+        <input type="number" id="multiplier" step="any" min="0" inputmode="decimal" placeholder="e.g. 21.0" />
+      </div>
+    </div>
+    <div class="g2" id="curRow">
+      <div class="f">
+        <label for="curR">Current rebirth</label>
+        <input type="number" id="curR" min="0" max="75" step="1" inputmode="numeric" placeholder="0 – 75" />
+      </div>
+      <div class="f">
+        <label for="curJ">Current jumps</label>
+        <input type="number" id="curJ" min="0" max="750" step="10" inputmode="numeric" placeholder="0 – 750" />
+      </div>
+    </div>
+    <div class="g2" id="tgtRow">
+      <div class="f" id="gTR">
+        <label for="tgtR">Target rebirth</label>
+        <input type="number" id="tgtR" min="1" max="75" step="1" inputmode="numeric" placeholder="1 – 75" />
+      </div>
+      <div class="f" id="gTJ">
+        <label for="tgtJ" id="tgtJLabel">Target jumps</label>
+        <input type="number" id="tgtJ" min="0" max="750" step="10" inputmode="numeric" placeholder="10 – 750" />
+      </div>
+    </div>
+    <div class="f" id="gSp" style="display:none">
+      <label for="tgtSp">Target amount</label>
+      <div class="row">
+        <input type="number" id="tgtSp" step="any" min="0" inputmode="decimal" placeholder="e.g. 5" />
+        <select id="spUnit" aria-label="Unit"><option value="1e27">Oc</option><option value="1e24">Sp</option><option value="1e21">Sx</option></select>
+      </div>
+    </div>
   </div>
 
-  <div class="grid-2" id="income-row">
-    <div class="field-group" id="group-income">
-      <label>Income / sec (Sp)</label>
-      <input type="number" id="income" step="any" placeholder="e.g. 0.00901" oninput="saveData()" />
-    </div>
-    <div class="field-group" id="group-multiplier">
-      <label>Current Multiplier (x)</label>
-      <input type="number" id="multiplier" step="any" placeholder="e.g. 21.0" oninput="saveData()" />
+  <div class="panel">
+    <h2>AFK plan</h2>
+    <div class="f">
+      <label for="afk">Hours you AFK per day</label>
+      <input type="number" id="afk" min="0.5" max="24" step="any" inputmode="decimal" placeholder="e.g. 8" />
+      <div class="hint">Shows what you earn per day and how many days the goal takes.</div>
     </div>
   </div>
 
-  <div class="grid-2" id="current-stats-row">
-    <div class="field-group">
-      <label>Current Rebirth</label>
-      <input type="number" id="cur-rebirth" placeholder="0 - 75" oninput="saveData()" />
-    </div>
-    <div class="field-group">
-      <label>Current Jumps</label>
-      <input type="number" id="cur-jumps" placeholder="0 - 750" oninput="saveData()" />
-    </div>
-  </div>
+  <button class="go" id="calc" type="button">Calculate</button>
+  <div id="err" role="alert" style="margin-top:14px"></div>
 
-  <div class="grid-2" id="target-stats-row">
-    <div class="field-group" id="group-target-rebirth">
-      <label>Target Rebirth</label>
-      <input type="number" id="target-rebirth" placeholder="1 - 75" oninput="saveData()" />
+  <div id="out" style="margin-top:14px">
+    <div class="panel hero">
+      <div class="sub">Total AFK time needed</div>
+      <div class="big" id="rTime">–</div>
+      <div class="sub" id="rDays">–</div>
     </div>
-    <div class="field-group" id="group-target-jumps">
-      <label id="target-jumps-label">Target Jumps</label>
-      <input type="number" id="target-jumps" placeholder="10 - 750" oninput="saveData()" />
+    <div class="panel">
+      <h2>Your AFK plan</h2>
+      <div class="stats">
+        <div class="s"><span>Earned per day</span><b class="oc" id="rDay">–</b></div>
+        <div class="s"><span>Earned per week</span><b class="oc" id="rWeek">–</b></div>
+        <div class="s"><span>Days to finish</span><b class="tm" id="rDaysN">–</b></div>
+        <div class="s"><span>Estimated finish date</span><b id="rDate">–</b></div>
+      </div>
     </div>
-  </div>
-
-  <div class="field-group" id="group-target-sp" style="display: none;">
-    <label>Target Amount (Sp)</label>
-    <input type="number" id="target-sp" step="any" placeholder="e.g. 500" oninput="saveData()" />
-  </div>
-
-  <button onclick="calculate()">Calculate</button>
-
-  <div id="error-box"></div>
-
-  <div id="results-box">
-    <div class="result-row" id="row-cost">
-      <span>Total Cost / Target:</span>
-      <span class="result-value highlight" id="res-cost">-</span>
+    <div class="panel">
+      <h2>Details</h2>
+      <div class="stats">
+        <div class="s"><span>Total cost</span><b class="oc" id="rCost">–</b></div>
+        <div class="s" id="rowMult"><span>Multiplier</span><b id="rMult">–</b></div>
+        <div class="s"><span>Income per hour</span><b id="rRate">–</b></div>
+      </div>
     </div>
-    <div class="result-row" id="row-mult">
-      <span>Multiplier Progression:</span>
-      <span class="result-value" id="res-mult">-</span>
-    </div>
-    <div class="result-row">
-      <span>Hourly Income:</span>
-      <span class="result-value" id="res-final-rate">-</span>
-    </div>
-    <div class="result-row">
-      <span>Total Required AFK Time:</span>
-      <span class="result-value success" id="res-time">-</span>
-    </div>
+    <div class="foot" id="rFoot"></div>
   </div>
 </div>
 
 <script>
-  const jumpTiers = [
-    { start: 320, end: 330, cost: 1.32 },
-    { start: 330, end: 340, cost: 2.12 },
-    { start: 340, end: 350, cost: 3.33 },
-    { start: 350, end: 360, cost: 5.12 },
-    { start: 360, end: 370, cost: 7.61 },
-    { start: 370, end: 380, cost: 10.80 },
-    { start: 380, end: 390, cost: 14.60 },
-    { start: 390, end: 400, cost: 18.60 },
-    { start: 400, end: 410, cost: 22.70 },
-    { start: 410, end: 420, cost: 27.70 },
-    { start: 420, end: 430, cost: 33.70 },
-    { start: 430, end: 440, cost: 41.10 },
-    { start: 440, end: 450, cost: 50.10 },
-    { start: 450, end: 460, cost: 60.50 },
-    { start: 460, end: 470, cost: 73.00 },
-    { start: 470, end: 480, cost: 87.30 },
-    { start: 480, end: 490, cost: 103.00 },
-    { start: 490, end: 500, cost: 122.00 },
-    { start: 500, end: 510, cost: 143.00 },
-    { start: 510, end: 520, cost: 165.00 },
-    { start: 520, end: 530, cost: 189.00 },
-    { start: 530, end: 540, cost: 214.00 },
-    { start: 540, end: 550, cost: 239.00 },
-    { start: 550, end: 560, cost: 277.0 },
-    { start: 560, end: 570, cost: 338.0 },
-    { start: 570, end: 580, cost: 412.0 },
-    { start: 580, end: 590, cost: 503.0 },
-    { start: 590, end: 600, cost: 612.0 },
-    { start: 600, end: 610, cost: 745.0 },
-    { start: 610, end: 620, cost: 905.0 },
-    { start: 620, end: 630, cost: 1090.0 },
-    { start: 630, end: 640, cost: 1320.0 },
-    { start: 640, end: 650, cost: 1600.0 },
-    { start: 650, end: 660, cost: 1930.0 },
-    { start: 660, end: 670, cost: 2320.0 },
-    { start: 670, end: 680, cost: 2790.0 },
-    { start: 680, end: 690, cost: 3330.0 },
-    { start: 690, end: 700, cost: 3970.0 },
-    { start: 700, end: 710, cost: 4710.0 },
-    { start: 710, end: 720, cost: 5560.0 },
-    { start: 720, end: 730, cost: 6540.0 },
-    { start: 730, end: 740, cost: 7650.0 },
-    { start: 740, end: 750, cost: 8910.0 }
-  ];
+// Jump costs from the in-game table, one entry per 10 jumps (0-10 up to 740-750).
+// 80-190 is a single 560M step in the game's chart, so 90-190 are 0 here.
+// Everything is stored as a plain number: k=1e3 ... Sx=1e21, Sp=1e24, Oc=1e27.
+const SUFX={k:1e3,M:1e6,B:1e9,T:1e12,Qa:1e15,Qi:1e18,Sx:1e21,Sp:1e24,Oc:1e27};
+const TIERS=('259 1.6k 9.95k 61.6k 381k 2.36M 14.6M 90.5M 560M 0 0 0 0 0 0 0 '+
+'0 0 0 287Qa 1.78Qi 11.0Qi 68.2Qi 422Qi 2.61Sx 10.9Sx 28.3Sx 70.9Sx 160Sx 303Sx 499Sx 814Sx '+
+'1.32Sp 2.12Sp 3.33Sp 5.12Sp 7.61Sp 10.8Sp 14.6Sp 18.6Sp 22.7Sp 27.7Sp 33.7Sp 41.1Sp 50.1Sp 60.5Sp 73Sp 87.3Sp '+
+'103Sp 122Sp 143Sp 165Sp 189Sp 214Sp 239Sp 277Sp 338Sp 412Sp 503Sp 612Sp 745Sp 905Sp 1.09Oc 1.32Oc '+
+'1.6Oc 1.93Oc 2.32Oc 2.79Oc 3.33Oc 3.97Oc 4.71Oc 5.56Oc 6.54Oc 7.65Oc 8.91Oc').split(' ').map(s=>{
+  const m=s.match(/^([\d.]+)([A-Za-z]*)$/); return parseFloat(m[1])*(SUFX[m[2]]||1);
+});
+const $=id=>document.getElementById(id);
+const IDS=['mode','income','multiplier','curR','curJ','tgtR','tgtJ','tgtSp','spUnit','afk'];
 
-  function toggleInputs() {
-    const mode = document.getElementById('mode').value;
-    const groupMultiplier = document.getElementById('group-multiplier');
-    const incomeRow = document.getElementById('income-row');
-    const groupRebirth = document.getElementById('group-target-rebirth');
-    const groupJumps = document.getElementById('group-target-jumps');
-    const groupSp = document.getElementById('group-target-sp');
-    const curStatsRow = document.getElementById('current-stats-row');
-    const targetStatsRow = document.getElementById('target-stats-row');
-    const targetJumpsLabel = document.getElementById('target-jumps-label');
+function jumpCost(from,to){
+  if(to<=from) return 0;
+  return TIERS.slice(from/10,to/10).reduce((a,b)=>a+b,0);
+}
+function fmtNum(n){return n.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2});}
+const SHOW=[['Oc',1e27],['Sp',1e24],['Sx',1e21],['Qi',1e18],['Qa',1e15],['T',1e12],['B',1e9],['M',1e6],['k',1e3]];
+function fmt(v){
+  for(const [n,s] of SHOW) if(v>=s) return fmtNum(v/s)+' '+n;
+  return fmtNum(v);
+}
+function fmtTime(h){
+  const m=Math.round(h*60), d=Math.floor(m/1440), hr=Math.floor((m%1440)/60), mi=m%60, p=[];
+  if(d>0) p.push(d+'d');
+  if(hr>0||d>0) p.push(hr+'h');
+  p.push(mi+'m');
+  return p.join(' ');
+}
+function err(msg){$('err').textContent=msg;$('err').style.display='block';$('out').style.display='none';}
 
-    if (mode === '1') {
-      incomeRow.className = 'grid-2';
-      groupMultiplier.style.display = 'block';
-      curStatsRow.style.display = 'grid';
-      targetStatsRow.style.display = 'grid';
-      groupRebirth.style.display = 'none';
-      groupJumps.style.display = 'block';
-      groupSp.style.display = 'none';
-      targetJumpsLabel.innerText = "Target Jumps";
-    } else if (mode === '2') {
-      incomeRow.className = 'grid-2';
-      groupMultiplier.style.display = 'block';
-      curStatsRow.style.display = 'grid';
-      targetStatsRow.style.display = 'grid';
-      groupRebirth.style.display = 'block';
-      groupJumps.style.display = 'none';
-      groupSp.style.display = 'none';
-    } else if (mode === '3') {
-      incomeRow.className = 'grid-2';
-      groupMultiplier.style.display = 'block';
-      curStatsRow.style.display = 'grid';
-      targetStatsRow.style.display = 'grid';
-      groupRebirth.style.display = 'block';
-      groupJumps.style.display = 'block';
-      groupSp.style.display = 'none';
-      targetJumpsLabel.innerText = "Final Jump Goal After Rebirths";
-    } else if (mode === '4') {
-      incomeRow.className = '';
-      groupMultiplier.style.display = 'none';
-      curStatsRow.style.display = 'none';
-      targetStatsRow.style.display = 'none';
-      groupSp.style.display = 'block';
-    }
-    saveData();
-  }
+function toggle(){
+  const m=$('mode').value, show=(id,on,d)=>{$(id).style.display=on?(d||'block'):'none';};
+  show('gMult',m!=='4'); show('curRow',m!=='4','grid'); show('tgtRow',m!=='4','grid');
+  show('gTR',m==='2'||m==='3'); show('gTJ',m==='1'||m==='3'); show('gSp',m==='4');
+  $('incomeRow').style.gridTemplateColumns=m==='4'?'1fr':'';
+  $('tgtJLabel').textContent=m==='3'?'Extra jumps after rebirths':'Target jumps';
+  $('out').style.display='none'; $('err').style.display='none';
+}
+function snap(el){
+  if(el.value==='') return;
+  let v=Math.round(parseFloat(el.value)/10)*10;
+  if(isNaN(v)) return;
+  el.value=Math.max(0,Math.min(750,v));
+}
 
-  function getJumpCost(fromJumps, toJumps) {
-    if (toJumps <= fromJumps) return 0;
-    let cost = 0;
-    if (fromJumps < 320 && toJumps >= 320) cost += 1.5;
+function calculate(){
+  $('err').style.display='none';
+  const m=$('mode').value;
+  const income=parseFloat($('income').value)*1e21, mult=parseFloat($('multiplier').value);
+  const curR=parseInt($('curR').value), curJ=parseInt($('curJ').value);
+  const tgtR=parseInt($('tgtR').value), tgtJ=parseInt($('tgtJ').value);
+  let tgtSp=parseFloat($('tgtSp').value);
+  const afk=parseFloat($('afk').value);
 
-    for (let tier of jumpTiers) {
-      if (fromJumps <= tier.start && toJumps >= tier.end) {
-        cost += tier.cost;
+  if(isNaN(income)||income<=0) return err('Enter an income per second greater than 0.');
+  if(isNaN(afk)||afk<=0||afk>24) return err('Enter AFK hours per day between 0 and 24.');
+
+  let hours=0, cost=0, rate=income*3600, startRate=rate, multText=null, foot='';
+
+  if(m==='4'){
+    if(isNaN(tgtSp)||tgtSp<=0) return err('Enter a target amount greater than 0.');
+    tgtSp*=parseFloat($('spUnit').value);
+    cost=tgtSp; hours=cost/rate;
+  }else{
+    if(isNaN(mult)||mult<=0) return err('Enter a current multiplier greater than 0.');
+    const base=income/mult; let am=mult;
+    const okJ=v=>!isNaN(v)&&v>=0&&v<=750&&v%10===0;
+    if(!okJ(curJ)) return err('Current jumps must be a multiple of 10 between 0 and 750.');
+    if(m==='1'){
+      if(!okJ(tgtJ)||tgtJ<=curJ) return err('Target jumps must be a multiple of 10, higher than your current jumps, and at most 750.');
+      cost=jumpCost(curJ,tgtJ); hours=cost/rate;
+    }else{
+      if(isNaN(curR)||curR<0||curR>75) return err('Current rebirth must be between 0 and 75.');
+      if(isNaN(tgtR)||tgtR<=curR||tgtR>75) return err('Target rebirth must be higher than current rebirth and at most 75.');
+      for(let r=curR+1;r<=tgtR;r++){
+        const step=jumpCost(r===curR+1?curJ:0,r*10);
+        hours+=step/(base*am*3600); cost+=step; am+=0.5;
       }
-    }
-    return cost;
-  }
-
-  function showError(msg) {
-    const err = document.getElementById('error-box');
-    err.innerText = msg;
-    err.style.display = 'block';
-    document.getElementById('results-box').style.display = 'none';
-  }
-
-  function formatCost(sp) {
-    return sp.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + ' Sp';
-  }
-
-  function formatTime(hoursDecimal) {
-    const totalMinutes = Math.round(hoursDecimal * 60);
-    const days = Math.floor(totalMinutes / 1440);
-    const remainingMinutesAfterDays = totalMinutes % 1440;
-    const hours = Math.floor(remainingMinutesAfterDays / 60);
-    const mins = remainingMinutesAfterDays % 60;
-
-    let parts = [];
-    if (days > 0) parts.push(days + 'd');
-    if (hours > 0 || days > 0) parts.push(hours + 'h');
-    parts.push(mins + 'm');
-    return parts.join(' ');
-  }
-
-  function calculate() {
-    const errorBox = document.getElementById('error-box');
-    const resultsBox = document.getElementById('results-box');
-    errorBox.style.display = 'none';
-
-    const mode = document.getElementById('mode').value;
-    const income = parseFloat(document.getElementById('income').value);
-    const mult = parseFloat(document.getElementById('multiplier').value);
-    const curR = parseInt(document.getElementById('cur-rebirth').value);
-    const curJ = parseInt(document.getElementById('cur-jumps').value);
-    const targetR = parseInt(document.getElementById('target-rebirth').value);
-    const targetJ = parseInt(document.getElementById('target-jumps').value);
-    const targetSp = parseFloat(document.getElementById('target-sp').value);
-
-    if (isNaN(income) || income <= 0) return showError('Invalid Option: Income per second must be greater than 0.');
-
-    let totalHours = 0;
-    let totalCost = 0;
-
-    if (mode === '4') {
-      if (isNaN(targetSp) || targetSp <= 0) return showError('Invalid Option: Target Sp must be greater than 0.');
-      totalCost = targetSp;
-      const hourlyRate = income * 3600;
-      totalHours = totalCost / hourlyRate;
-
-      document.getElementById('row-mult').style.display = 'none';
-      document.getElementById('res-final-rate').innerText = formatCost(hourlyRate) + ' / hr';
-
-    } else {
-      if (isNaN(mult) || mult <= 0) return showError('Invalid Option: Current multiplier must be greater than 0.');
-
-      const baseIncome = income / mult;
-      let activeMult = mult;
-
-      if (mode === '1') {
-        if (isNaN(curJ) || curJ < 0 || curJ > 750) return showError('Invalid Option: Current jumps must be between 0 and 750.');
-        if (isNaN(targetJ) || targetJ <= curJ || targetJ > 750) return showError('Invalid Option: Target jumps must be higher than current jumps and <= 750.');
-
-        totalCost = getJumpCost(curJ, targetJ);
-        const hourlyRate = (baseIncome * activeMult) * 3600;
-        totalHours = totalCost / hourlyRate;
-
-        document.getElementById('row-mult').style.display = 'none';
-        document.getElementById('res-final-rate').innerText = formatCost(hourlyRate) + ' / hr';
-
-      } else if (mode === '2' || mode === '3') {
-        if (isNaN(curR) || curR < 0 || curR > 75) return showError('Invalid Option: Current rebirth must be between 0 and 75.');
-        if (isNaN(curJ) || curJ < 0 || curJ > 750) return showError('Invalid Option: Current jumps must be between 0 and 750.');
-        if (isNaN(targetR) || targetR <= curR || targetR > 75) return showError('Invalid Option: Target rebirth must be greater than current rebirth and <= 75.');
-
-        for (let r = curR + 1; r <= targetR; r++) {
-          const neededJumps = r * 10;
-          const startJumps = (r === curR + 1) ? curJ : 0;
-          const stepCost = getJumpCost(startJumps, neededJumps);
-
-          const hourlyRate = (baseIncome * activeMult) * 3600;
-          totalHours += (stepCost / hourlyRate);
-          totalCost += stepCost;
-          activeMult += 0.5;
-        }
-
-        if (mode === '3') {
-          if (isNaN(targetJ) || targetJ < 0 || targetJ > 750) return showError('Invalid Option: Final jump goal must be between 0 and 750.');
-          if (targetJ > 0) {
-            const finalJumpCost = getJumpCost(0, targetJ);
-            const finalHourlyRate = (baseIncome * activeMult) * 3600;
-            totalHours += (finalJumpCost / finalHourlyRate);
-            totalCost += finalJumpCost;
-          }
-        }
-
-        document.getElementById('row-mult').style.display = 'flex';
-        document.getElementById('res-mult').innerText = mult.toFixed(1) + 'x → ' + activeMult.toFixed(1) + 'x';
-        document.getElementById('res-final-rate').innerText = formatCost((baseIncome * activeMult) * 3600) + ' / hr';
+      if(m==='3'){
+        if(!okJ(tgtJ)) return err('Extra jumps must be a multiple of 10 between 0 and 750.');
+        if(tgtJ>0){const c=jumpCost(0,tgtJ); hours+=c/(base*am*3600); cost+=c;}
       }
+      rate=base*am*3600; multText=mult.toFixed(1)+'x → '+am.toFixed(1)+'x';
+      foot='Each rebirth adds +0.5x. Income per hour shown is the final rate.';
     }
-
-    document.getElementById('res-cost').innerText = formatCost(totalCost);
-    document.getElementById('res-time').innerText = formatTime(totalHours);
-    resultsBox.style.display = 'block';
   }
 
-  function saveData() {
-    const data = {
-      mode: document.getElementById('mode').value,
-      income: document.getElementById('income').value,
-      multiplier: document.getElementById('multiplier').value,
-      curRebirth: document.getElementById('cur-rebirth').value,
-      curJumps: document.getElementById('cur-jumps').value,
-      targetRebirth: document.getElementById('target-rebirth').value,
-      targetJumps: document.getElementById('target-jumps').value,
-      targetSp: document.getElementById('target-sp').value
-    };
-    localStorage.setItem('calc_data', JSON.stringify(data));
-  }
+  const days=hours/afk, dayEarn=startRate*afk;
+  const finish=new Date(); finish.setDate(finish.getDate()+Math.ceil(days));
+  $('rTime').textContent=fmtTime(hours);
+  $('rDays').textContent='about '+days.toFixed(1)+' days at '+afk+' h/day';
+  $('rDay').textContent=fmt(dayEarn);
+  $('rWeek').textContent=fmt(dayEarn*7);
+  $('rDaysN').textContent=Math.ceil(days)+(Math.ceil(days)===1?' day':' days');
+  $('rDate').textContent=finish.toLocaleDateString(undefined,{weekday:'short',month:'short',day:'numeric'});
+  $('rCost').textContent=fmt(cost);
+  $('rowMult').style.display=multText?'flex':'none';
+  if(multText) $('rMult').textContent=multText;
+  $('rRate').textContent=fmt(rate)+' / h';
+  $('rFoot').textContent=foot+(multText?' Daily earnings use your current rate.':'');
+  $('out').style.display='block';
+}
 
-  function loadData() {
-    const saved = localStorage.getItem('calc_data');
-    if (saved) {
-      const data = JSON.parse(saved);
-      if (data.mode) document.getElementById('mode').value = data.mode;
-      if (data.income) document.getElementById('income').value = data.income;
-      if (data.multiplier) document.getElementById('multiplier').value = data.multiplier;
-      if (data.curRebirth) document.getElementById('cur-rebirth').value = data.curRebirth;
-      if (data.curJumps) document.getElementById('cur-jumps').value = data.curJumps;
-      if (data.targetRebirth) document.getElementById('target-rebirth').value = data.targetRebirth;
-      if (data.targetJumps) document.getElementById('target-jumps').value = data.targetJumps;
-      if (data.targetSp) document.getElementById('target-sp').value = data.targetSp;
-    }
-    toggleInputs();
-  }
+function save(){
+  try{const d={};IDS.forEach(i=>d[i]=$(i).value);localStorage.setItem('rjc_v3',JSON.stringify(d));}catch(e){}
+}
+function load(){
+  try{
+    const d=JSON.parse(localStorage.getItem('rjc_v3')||'null');
+    if(d) IDS.forEach(i=>{if(d[i]!==undefined&&d[i]!==null) $(i).value=d[i];});
+  }catch(e){}
+  toggle();
+}
 
-  window.onload = loadData;
+IDS.forEach(i=>$(i).addEventListener('input',save));
+$('mode').addEventListener('change',()=>{toggle();save();});
+['curJ','tgtJ'].forEach(i=>$(i).addEventListener('change',()=>{snap($(i));save();}));
+$('calc').addEventListener('click',calculate);
+document.addEventListener('keydown',e=>{if(e.key==='Enter'&&e.target.tagName==='INPUT') calculate();});
+load();
 </script>
-
 </body>
 </html>
