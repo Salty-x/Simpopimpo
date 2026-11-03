@@ -58,6 +58,10 @@ button.go:active{transform:scale(.985)}
 .oc{color:var(--oc)}
 .tm{color:var(--time)}
 .foot{font-size:.76rem;color:var(--muted);text-align:center;margin-top:4px}
+dialog{border:1px solid var(--border);border-radius:16px;background:var(--card);color:var(--text);padding:20px;width:min(92vw,400px)}
+dialog::backdrop{background:rgba(0,0,0,.6)}
+dialog h2{font:700 1.2rem/1.2 Georgia,"Times New Roman",serif;margin:0 0 8px}
+dialog p{margin:0 0 16px;color:var(--muted);font-size:.95rem}
 @media (max-width:380px){.g2{grid-template-columns:1fr}}
 @media (prefers-reduced-motion:reduce){*{transition:none!important}}
 </style>
@@ -77,6 +81,7 @@ button.go:active{transform:scale(.985)}
         <option value="2">Rebirth grind (current jumps → target rebirth)</option>
         <option value="3">Rebirth grind + extra jumps at the end</option>
         <option value="4">Time to earn a specific amount</option>
+        <option value="5">What can I reach in my AFK time?</option>
       </select>
     </div>
     <div class="g2" id="incomeRow">
@@ -89,6 +94,14 @@ button.go:active{transform:scale(.985)}
         <input type="number" id="multiplier" step="any" min="0" inputmode="decimal" placeholder="e.g. 21.0" />
       </div>
     </div>
+    <div class="f">
+      <label for="bal">Currency you have right now (optional)</label>
+      <div class="row">
+        <input type="number" id="bal" step="any" min="0" inputmode="decimal" placeholder="e.g. 3.5" />
+        <select id="balUnit" aria-label="Unit"><option value="1e27">Oc</option><option value="1e24">Sp</option><option value="1e21">Sx</option></select>
+      </div>
+      <div class="hint">Counted toward the cost, so it shortens the time needed.</div>
+    </div>
     <div class="g2" id="curRow">
       <div class="f">
         <label for="curR">Current rebirth</label>
@@ -99,9 +112,17 @@ button.go:active{transform:scale(.985)}
         <input type="number" id="curJ" min="0" max="750" step="10" inputmode="numeric" placeholder="0 – 750" />
       </div>
     </div>
+    <div class="f" id="gLock" style="display:none">
+      <label for="lock">Lock a target</label>
+      <select id="lock">
+        <option value="n">Nothing: show the most I can reach</option>
+        <option value="j">Lock final jumps, find max rebirth</option>
+        <option value="r">Lock rebirth, find max jumps</option>
+      </select>
+    </div>
     <div class="g2" id="tgtRow">
       <div class="f" id="gTR">
-        <label for="tgtR">Target rebirth</label>
+        <label for="tgtR" id="tgtRLabel">Target rebirth</label>
         <input type="number" id="tgtR" min="1" max="75" step="1" inputmode="numeric" placeholder="1 – 75" />
       </div>
       <div class="f" id="gTJ">
@@ -125,6 +146,13 @@ button.go:active{transform:scale(.985)}
       <input type="number" id="afk" min="0.5" max="24" step="any" inputmode="decimal" placeholder="e.g. 8" />
       <div class="hint">Shows what you earn per day and how many days the goal takes.</div>
     </div>
+    <div id="gReach" style="display:none">
+      <div class="g2">
+        <div class="f"><label for="days">Days you will AFK</label><input type="number" id="days" min="0" step="any" inputmode="decimal" placeholder="e.g. 3" /></div>
+        <div class="f"><label for="totH">Or total hours</label><input type="number" id="totH" min="0" step="any" inputmode="decimal" placeholder="e.g. 24" /></div>
+      </div>
+      <div class="hint">Total hours wins if filled. Otherwise it uses hours per day × days.</div>
+    </div>
   </div>
 
   <button class="go" id="calc" type="button">Calculate</button>
@@ -132,11 +160,11 @@ button.go:active{transform:scale(.985)}
 
   <div id="out" style="margin-top:14px">
     <div class="panel hero">
-      <div class="sub">Total AFK time needed</div>
+      <div class="sub" id="rLbl">Total AFK time needed</div>
       <div class="big" id="rTime">–</div>
       <div class="sub" id="rDays">–</div>
     </div>
-    <div class="panel">
+    <div class="panel" id="rAfk">
       <h2>Your AFK plan</h2>
       <div class="stats">
         <div class="s"><span>Earned per day</span><b class="oc" id="rDay">–</b></div>
@@ -151,12 +179,14 @@ button.go:active{transform:scale(.985)}
         <div class="s"><span>Total cost</span><b class="oc" id="rCost">–</b></div>
         <div class="s" id="rowMult"><span>Multiplier</span><b id="rMult">–</b></div>
         <div class="s"><span>Income per hour</span><b id="rRate">–</b></div>
+        <div class="s" id="rowAlt" style="display:none"><span id="rAltL">–</span><b id="rAltV">–</b></div>
       </div>
     </div>
     <div class="foot" id="rFoot"></div>
   </div>
 </div>
 
+<dialog id="pop" aria-labelledby="popT"><h2 id="popT"></h2><p id="popM"></p><button class="go" type="button" id="popOk">Got it</button></dialog>
 <script>
 // Jump costs from the in-game table, one entry per 10 jumps (0-10 up to 740-750).
 // 80-190 is a single 560M step in the game's chart, so 90-190 are 0 here.
@@ -170,7 +200,7 @@ const TIERS=('259 1.6k 9.95k 61.6k 381k 2.36M 14.6M 90.5M 560M 0 0 0 0 0 0 0 '+
   const m=s.match(/^([\d.]+)([A-Za-z]*)$/); return parseFloat(m[1])*(SUFX[m[2]]||1);
 });
 const $=id=>document.getElementById(id);
-const IDS=['mode','income','multiplier','curR','curJ','tgtR','tgtJ','tgtSp','spUnit','afk'];
+const IDS=['mode','income','multiplier','curR','curJ','tgtR','tgtJ','tgtSp','spUnit','afk','lock','days','totH','bal','balUnit'];
 
 function jumpCost(from,to){
   if(to<=from) return 0;
@@ -193,12 +223,21 @@ function err(msg){$('err').textContent=msg;$('err').style.display='block';$('out
 
 function toggle(){
   const m=$('mode').value, show=(id,on,d)=>{$(id).style.display=on?(d||'block'):'none';};
-  show('gMult',m!=='4'); show('curRow',m!=='4','grid'); show('tgtRow',m!=='4','grid');
-  show('gTR',m==='2'||m==='3'); show('gTJ',m==='1'||m==='3'); show('gSp',m==='4');
+  const lk=$('lock').value, r5=m==='5';
+  show('gMult',m!=='4'); show('curRow',m!=='4','grid'); show('gLock',r5); show('gReach',r5);
+  show('tgtRow',m!=='4'&&(!r5||lk!=='n'),'grid');
+  show('gTR',m==='2'||m==='3'||(r5&&lk==='r')); show('gTJ',m==='1'||m==='3'||(r5&&lk==='j')); show('gSp',m==='4');
+  $('tgtRLabel').textContent=r5?'Locked rebirth':'Target rebirth';
   $('incomeRow').style.gridTemplateColumns=m==='4'?'1fr':'';
-  $('tgtJLabel').textContent=m==='3'?'Extra jumps after rebirths':'Target jumps';
+  $('tgtJLabel').textContent=m==='3'?'Extra jumps after rebirths':r5?'Locked final jumps':'Target jumps';
   $('out').style.display='none'; $('err').style.display='none';
 }
+function pop(title,msg){
+  $('popT').textContent=title; $('popM').textContent=msg;
+  $('out').style.display='none'; $('err').style.display='none';
+  const d=$('pop'); if(d.showModal) d.showModal(); else alert(title+'\n'+msg);
+}
+function getBal(){const v=parseFloat($('bal').value);return (v>0?v:0)*parseFloat($('balUnit').value);}
 function snap(el){
   if(el.value==='') return;
   let v=Math.round(parseFloat(el.value)/10)*10;
@@ -214,16 +253,18 @@ function calculate(){
   const tgtR=parseInt($('tgtR').value), tgtJ=parseInt($('tgtJ').value);
   let tgtSp=parseFloat($('tgtSp').value);
   const afk=parseFloat($('afk').value);
+  const bal=getBal();
 
   if(isNaN(income)||income<=0) return err('Enter an income per second greater than 0.');
-  if(isNaN(afk)||afk<=0||afk>24) return err('Enter AFK hours per day between 0 and 24.');
+  if(m!=='5'&&(isNaN(afk)||afk<=0||afk>24)) return err('Enter AFK hours per day between 0 and 24.');
+  if(m==='5') return reachMode(income,mult,curR,curJ,tgtR,tgtJ,afk);
 
   let hours=0, cost=0, rate=income*3600, startRate=rate, multText=null, foot='';
 
   if(m==='4'){
     if(isNaN(tgtSp)||tgtSp<=0) return err('Enter a target amount greater than 0.');
     tgtSp*=parseFloat($('spUnit').value);
-    cost=tgtSp; hours=cost/rate;
+    cost=tgtSp; hours=Math.max(0,cost-bal)/rate;
   }else{
     if(isNaN(mult)||mult<=0) return err('Enter a current multiplier greater than 0.');
     const base=income/mult; let am=mult;
@@ -231,17 +272,18 @@ function calculate(){
     if(!okJ(curJ)) return err('Current jumps must be a multiple of 10 between 0 and 750.');
     if(m==='1'){
       if(!okJ(tgtJ)||tgtJ<=curJ) return err('Target jumps must be a multiple of 10, higher than your current jumps, and at most 750.');
-      cost=jumpCost(curJ,tgtJ); hours=cost/rate;
+      cost=jumpCost(curJ,tgtJ); hours=Math.max(0,cost-bal)/rate;
     }else{
       if(isNaN(curR)||curR<0||curR>75) return err('Current rebirth must be between 0 and 75.');
       if(isNaN(tgtR)||tgtR<=curR||tgtR>75) return err('Target rebirth must be higher than current rebirth and at most 75.');
+      let left=bal;
       for(let r=curR+1;r<=tgtR;r++){
         const step=jumpCost(r===curR+1?curJ:0,r*10);
-        hours+=step/(base*am*3600); cost+=step; am+=0.5;
+        const pay=Math.min(left,step); left-=pay; hours+=(step-pay)/(base*am*3600); cost+=step; am+=0.5;
       }
       if(m==='3'){
         if(!okJ(tgtJ)) return err('Extra jumps must be a multiple of 10 between 0 and 750.');
-        if(tgtJ>0){const c=jumpCost(0,tgtJ); hours+=c/(base*am*3600); cost+=c;}
+        if(tgtJ>0){const c=jumpCost(0,tgtJ); const pay=Math.min(left,c); left-=pay; hours+=(c-pay)/(base*am*3600); cost+=c;}
       }
       rate=base*am*3600; multText=mult.toFixed(1)+'x → '+am.toFixed(1)+'x';
       foot='Each rebirth adds +0.5x. Income per hour shown is the final rate.';
@@ -250,6 +292,7 @@ function calculate(){
 
   const days=hours/afk, dayEarn=startRate*afk;
   const finish=new Date(); finish.setDate(finish.getDate()+Math.ceil(days));
+  $('rLbl').textContent='Total AFK time needed'; $('rAfk').style.display=''; $('rowAlt').style.display='none';
   $('rTime').textContent=fmtTime(hours);
   $('rDays').textContent='about '+days.toFixed(1)+' days at '+afk+' h/day';
   $('rDay').textContent=fmt(dayEarn);
@@ -260,7 +303,87 @@ function calculate(){
   $('rowMult').style.display=multText?'flex':'none';
   if(multText) $('rMult').textContent=multText;
   $('rRate').textContent=fmt(rate)+' / h';
-  $('rFoot').textContent=foot+(multText?' Daily earnings use your current rate.':'');
+  $('rFoot').textContent=foot+(multText?' Daily earnings use your current rate.':'')+(bal>0?' Your '+fmt(bal)+' balance is already counted.':'');
+  $('out').style.display='block';
+}
+
+// Simulates rebirthing up to R, then buying J jumps (counted from 0 after the last rebirth).
+function sim(c,R,J){
+  let h=0,k=0,am=c.mult,left=c.bal;
+  if(R<=c.curR){k=jumpCost(c.curJ,J);return{h:Math.max(0,k-c.bal)/(c.base*am*3600),k,am};}
+  for(let r=c.curR+1;r<=R;r++){
+    const s=jumpCost(r===c.curR+1?c.curJ:0,r*10);
+    const p=Math.min(left,s);left-=p;h+=(s-p)/(c.base*am*3600);k+=s;am+=0.5;
+  }
+  if(J>0){const s=jumpCost(0,J);const p=Math.min(left,s);left-=p;h+=(s-p)/(c.base*am*3600);k+=s;}
+  return{h,k,am};
+}
+// Most jumps affordable within H hours after reaching rebirth R (-1 if R itself is out of reach).
+function maxJ(c,R,H){
+  let best=-1;
+  for(let J=(R>c.curR?0:c.curJ);J<=750;J+=10){
+    if(sim(c,R,J).h>H+1e-9) break;
+    best=J;
+  }
+  return best;
+}
+function reachMode(income,mult,curR,curJ,tgtR,tgtJ,afk){
+  const okJ=v=>!isNaN(v)&&v>=0&&v<=750&&v%10===0;
+  if(isNaN(mult)||mult<=0) return err('Enter a current multiplier greater than 0.');
+  if(isNaN(curR)||curR<0||curR>75) return err('Current rebirth must be between 0 and 75.');
+  if(!okJ(curJ)) return err('Current jumps must be a multiple of 10 between 0 and 750.');
+  const tot=parseFloat($('totH').value), days=parseFloat($('days').value);
+  let H;
+  if(tot>0) H=tot;
+  else{
+    if(isNaN(afk)||afk<=0||afk>24) return err('Enter AFK hours per day between 0 and 24, or fill in total hours.');
+    if(isNaN(days)||days<=0) return err('Enter how many days you will AFK, or fill in total hours.');
+    H=afk*days;
+  }
+  const c={base:income/mult,curR,curJ,mult,bal:getBal()}, lk=$('lock').value;
+  let R,J,label='You can reach',alt=null;
+  if(lk==='j'){
+    if(!okJ(tgtJ)) return err('Locked jumps must be a multiple of 10 between 0 and 750.');
+    let min=Infinity; R=-1;
+    for(let r=curR;r<=75;r++){const t=sim(c,r,tgtJ).h; min=Math.min(min,t); if(t<=H+1e-9) R=r;}
+    if(R<0) return pop('Not enough hours','Reaching '+tgtJ+' jumps needs at least '+fmtTime(min)+' of AFK, and you only have '+fmtTime(H)+'. You need '+fmtTime(min-H)+' more.');
+    J=tgtJ; label='You can reach (jumps locked at '+tgtJ+')';
+  }else if(lk==='r'){
+    if(isNaN(tgtR)||tgtR<=curR||tgtR>75) return err('Locked rebirth must be higher than your current rebirth and at most 75.');
+    R=tgtR; J=maxJ(c,R,H);
+    if(J<0) return pop('Not enough hours','Rebirth '+tgtR+' needs '+fmtTime(sim(c,R,0).h)+' of AFK, and you only have '+fmtTime(H)+'. You need '+fmtTime(sim(c,R,0).h-H)+' more.');
+    label='You can reach (rebirth locked at '+tgtR+')';
+  }else{
+    R=curR;
+    for(let r=curR+1;r<=75;r++){if(sim(c,r,0).h>H+1e-9) break; R=r;}
+    J=maxJ(c,R,H);
+    if(R>curR) alt=maxJ(c,curR,H);
+  }
+  if(R<=curR&&J<=curJ){
+    const opts=[];
+    if(lk!=='j'&&curJ<750) opts.push(sim(c,curR,curJ+10).h);
+    if(curR<75) opts.push(sim(c,curR+1,lk==='j'?J:0).h);
+    if(!opts.length) return pop('Nothing left to reach','You are already at the maximum rebirth and jumps.');
+    const need=Math.min(...opts);
+    return pop('These hours won\u2019t progress you','With '+fmtTime(H)+' of AFK you can\u2019t afford a single step forward'+(lk==='j'?' and still finish on '+J+' jumps':'')+'. The next step needs '+fmtTime(need)+', so you need '+fmtTime(Math.max(0,need-H))+' more AFK time.');
+  }
+  const s=sim(c,R,J);
+  $('rLbl').textContent=label;
+  $('rTime').textContent='Rebirth '+R+(J>0?' + '+J+' jumps':'');
+  $('rDays').textContent='uses '+fmtTime(s.h)+' of '+fmtTime(H)+' ('+fmtTime(Math.max(0,H-s.h))+' spare)';
+  $('rAfk').style.display='none';
+  $('rCost').textContent=fmt(s.k);
+  $('rowMult').style.display=R>curR?'flex':'none';
+  $('rMult').textContent=mult.toFixed(1)+'x → '+s.am.toFixed(1)+'x';
+  $('rRate').textContent=fmt(c.base*s.am*3600)+' / h';
+  if(alt!==null){$('rAltL').textContent='Jumps only, no rebirths';$('rAltV').textContent=alt+' jumps';$('rowAlt').style.display='flex';}
+  else if(lk!=='r'&&R<75){
+    const nx=sim(c,R+1,lk==='j'?J:0).h;
+    $('rAltL').textContent='Rebirth '+(R+1)+(lk==='j'?' + '+J+' jumps':'')+' needs';
+    $('rAltV').textContent=fmtTime(nx)+(nx>H?' ('+fmtTime(nx-H)+' short)':'');
+    $('rowAlt').style.display='flex';
+  }else $('rowAlt').style.display='none';
+  $('rFoot').textContent='Each rebirth adds +0.5x. Jumps count from 0 after your last rebirth.'+(c.bal>0?' Your '+fmt(c.bal)+' balance is counted.':'');
   $('out').style.display='block';
 }
 
@@ -278,6 +401,8 @@ function load(){
 IDS.forEach(i=>$(i).addEventListener('input',save));
 $('mode').addEventListener('change',()=>{toggle();save();});
 ['curJ','tgtJ'].forEach(i=>$(i).addEventListener('change',()=>{snap($(i));save();}));
+$('popOk').addEventListener('click',()=>$('pop').close());
+$('lock').addEventListener('change',()=>{toggle();save();});
 $('calc').addEventListener('click',calculate);
 document.addEventListener('keydown',e=>{if(e.key==='Enter'&&e.target.tagName==='INPUT') calculate();});
 load();
